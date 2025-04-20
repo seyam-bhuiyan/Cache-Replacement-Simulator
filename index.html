@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache Replacement Simulator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f8f9fa;
+        }
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(90deg, #007bff, #00c6ff);
+            color: white;
+            position: relative;
+        }
+        .header img {
+            width: 50px;
+            position: absolute;
+            top: 20px;
+            left: 2rem;
+            border-radius: 50%;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            margin-top: 20px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        .results:hover {
+            transform: scale(1.02);
+        }
+        .icon {
+            font-size: 50px;
+            color: #007bff;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            padding: 10px;
+            color: white;
+        }
+        .footer-text {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="https://static.vecteezy.com/system/resources/previews/004/908/013/non_2x/coding-logo-design-template-free-vector.jpg" alt="Logo">
+        <h1>Cache Replacement Simulator</h1>
+        <i class="fas fa-database icon"></i>
+    </div>
+    <div class="container">
+        <div class="form-group">
+            <label for="cacheSize">Number of Cache Blocks:</label>
+            <input type="number" class="form-control" id="cacheSize" required>
+        </div>
+        <div class="form-group">
+            <label for="blockSize">Block Size (Number of Words per Block):</label>
+            <input type="number" class="form-control" id="blockSize" required>
+        </div>
+        <div class="form-group">
+            <label for="numAccesses">Number of Memory Accesses:</label>
+            <input type="number" class="form-control" id="numAccesses" required>
+        </div>
+        <div class="form-group">
+            <label for="accessSequence">Memory Access Sequence (space-separated):</label>
+            <input type="text" class="form-control" id="accessSequence" required>
+        </div>
+        <button class="btn btn-primary" onclick="simulateCache()">Simulate</button>
+
+        <div id="results" class="results"></div>
+    </div>
+
+    <footer>
+        <p class="footer-text" style="color: #999;">This Project is by Jihadul Islam Seyam and Fahima Akter</p>
+    </footer>
+
+    <script>
+        class SimpleCacheSimulator {
+            constructor(cacheSize, blockSize, policy) {
+                this.cacheSize = cacheSize;
+                this.blockSize = blockSize;
+                this.policy = policy;
+                this.addressToBlockMap = new Map();
+                this.cacheList = [];
+                this.hits = 0;
+                this.misses = 0;
+                this.hitAddresses = [];
+                this.missAddresses = [];
+            }
+
+            accessMemory(address, mainMemory) {
+                if (address < 0 || address >= mainMemory.length) {
+                    console.error("Error: Address " + address + " is out of bounds.");
+                    return;
+                }
+
+                if (this.addressToBlockMap.has(address)) {
+                    this.hits++;
+                    this.hitAddresses.push(address);
+                    if (this.policy === "LRU") {
+ this.updateLRU(address);
+                    }
+                } else {
+                    this.misses++;
+                    this.missAddresses.push(address);
+                    this.handleMiss(address);
+                }
+            }
+
+            updateLRU(address) {
+                const index = this.cacheList.indexOf(address);
+                if (index > -1) {
+                    this.cacheList.splice(index, 1);
+                }
+                this.cacheList.unshift(address);
+            }
+
+            handleMiss(address) {
+                if (this.cacheList.length >= this.cacheSize) {
+                    this.evictCache();
+                }
+                this.cacheList.unshift(address);
+                this.addressToBlockMap.set(address, address);
+            }
+
+            evictCache() {
+                const evictAddress = this.cacheList.pop();
+                this.addressToBlockMap.delete(evictAddress);
+            }
+
+            displayResults() {
+                return {
+                    hits: this.hits,
+                    misses: this.misses,
+                    hitAddresses: this.hitAddresses,
+                    missAddresses: this.missAddresses,
+                    hitRatio: this.hits / (this.hits + this.misses),
+                    missRatio: this.misses / (this.hits + this.misses)
+                };
+            }
+        }
+
+        class FIFOCacheSimulator extends SimpleCacheSimulator {
+            handleMiss(address) {
+                if (this.cacheList.length >= this.cacheSize) {
+                    this.evictCache();
+                }
+                this.cacheList.push(address);
+                this.addressToBlockMap.set(address, address);
+            }
+
+            evictCache() {
+                const evictAddress = this.cacheList.shift();
+                this.addressToBlockMap.delete(evictAddress);
+            }
+        }
+
+        function simulateCache() {
+            const cacheSize = parseInt(document.getElementById("cacheSize").value);
+            const blockSize = parseInt(document.getElementById("blockSize").value);
+            const numAccesses = parseInt(document.getElementById("numAccesses").value);
+            const accessSequence = document.getElementById("accessSequence").value.split(" ").map(Number);
+
+            const mainMemory = Array.from({ length: 100 }, (_, i) => i); // Simulated main memory
+
+            const lruSimulator = new SimpleCacheSimulator(cacheSize, blockSize, "LRU");
+            const fifoSimulator = new FIFOCacheSimulator(cacheSize, blockSize, "FIFO");
+
+            accessSequence.forEach(address => {
+                lruSimulator.accessMemory(address, mainMemory);
+                fifoSimulator.accessMemory(address, mainMemory);
+            });
+
+            const lruResults = lruSimulator.displayResults();
+            const fifoResults = fifoSimulator.displayResults();
+
+            document.getElementById("results").innerHTML = `
+                <h4>Results for FIFO:</h4>
+                <p>Hits: ${fifoResults.hits} (Addresses: ${fifoResults.hitAddresses.join(", ")})</p>
+                <p>Misses: ${fifoResults.misses} (Addresses: ${fifoResults.missAddresses.join(", ")})</p>
+                <p>Hit Ratio: ${(fifoResults.hitRatio * 100).toFixed(2)}%</p>
+                <p>Miss Ratio: ${(fifoResults.missRatio * 100).toFixed(2)}%</p>
+                <h4>Results for LRU:</h4>
+                <p>Hits: ${lruResults.hits} (Addresses: ${lruResults.hitAddresses.join(", ")})</p>
+                <p>Misses: ${lruResults.misses} (Addresses: ${lruResults.missAddresses.join(", ")})</p>
+                <p>Hit Ratio: ${(lruResults.hitRatio * 100).toFixed(2)}%</p>
+                <p>Miss Ratio: ${(lruResults.missRatio * 100).toFixed(2)}%</p>
+            `;
+        }
+    </script>
+</body>
+</html>
