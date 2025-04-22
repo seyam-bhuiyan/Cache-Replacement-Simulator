@@ -75,10 +75,7 @@
             <label for="cacheSize">Number of Cache Blocks:</label>
             <input type="number" class="form-control" id="cacheSize" required>
         </div>
-        <div class="form-group">
-            <label for="blockSize">Block Size (Number of Words per Block):</label>
-            <input type="number" class="form-control" id="blockSize" required>
-        </div>
+        
         <div class="form-group">
             <label for="numAccesses">Number of Memory Accesses:</label>
             <input type="number" class="form-control" id="numAccesses" required>
@@ -98,9 +95,9 @@
 
     <script>
         class SimpleCacheSimulator {
-            constructor(cacheSize, blockSize, policy) {
+            constructor(cacheSize, policy) {
                 this.cacheSize = cacheSize;
-                this.blockSize = blockSize;
+               
                 this.policy = policy;
                 this.addressToBlockMap = new Map();
                 this.cacheList = [];
@@ -179,14 +176,14 @@
 
         function simulateCache() {
             const cacheSize = parseInt(document.getElementById("cacheSize").value);
-            const blockSize = parseInt(document.getElementById("blockSize").value);
+            
             const numAccesses = parseInt(document.getElementById("numAccesses").value);
             const accessSequence = document.getElementById("accessSequence").value.split(" ").map(Number);
 
             const mainMemory = Array.from({ length: 100 }, (_, i) => i); // Simulated main memory
 
-            const lruSimulator = new SimpleCacheSimulator(cacheSize, blockSize, "LRU");
-            const fifoSimulator = new FIFOCacheSimulator(cacheSize, blockSize, "FIFO");
+            const lruSimulator = new SimpleCacheSimulator(cacheSize, "LRU");
+            const fifoSimulator = new FIFOCacheSimulator(cacheSize,  "FIFO");
 
             accessSequence.forEach(address => {
                 lruSimulator.accessMemory(address, mainMemory);
